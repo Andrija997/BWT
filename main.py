@@ -1,19 +1,8 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[28]:
-
-
-import numpy as np
 from functools import cmp_to_key
 import re
 import sys, threading
-import time
 import math
 import timeit
-
-
-# In[2]:
 
 
 class BWT:
@@ -144,10 +133,6 @@ class BWT:
 
         return original
 
-
-# In[3]:
-
-
 def suffix_array(sequence, period=1):
     ''' Given a pattern/sequence, returns only suffix-array's offsets.
         Taking sub-sequences from an incremental position and sorting them in lexicographic order. '''
@@ -164,14 +149,12 @@ def suffix_array(sequence, period=1):
     else:
         return offsets
 
-
 def cat_suffix_array(sa, period):
     new_sa = []
     for i in range(0, len(sa)):
         if i % period == 0:
             new_sa.append(sa[i])
     return new_sa
-
 
 def tally_matrix(last, period=1):
     ''' Given the last column of the BW matrix, returns tally matrix as a dictionary.
@@ -204,10 +187,6 @@ def tally_matrix(last, period=1):
                     tally[key].append(counter[key])
 
     return tally, counter
-
-
-# In[4]:
-
 
 def count(BWT, bwt, pattern):
     """ Given the Burrow-Wheeler's transform sequence and a pattern, returns a the first and last
@@ -258,28 +237,21 @@ def fast_count(L_rank, L_tot, F, bwt, pattern, tally, period):
     lower_limit, upper_limit = F[pattern[-1]]
     lower_limit -= 1
     upper_limit -= 1
-    # print(lower_limit, upper_limit)
 
     while i >= 0:
 
         search_symbol = pattern[i]
         if lower_limit % period != 0:
             low_rank = find_rank(bwt, lower_limit, search_symbol, period, tally)
-            # print('low ',low_rank)
         else:
             low_rank = tally[search_symbol][lower_limit // period]
-            # print('Nasao cp low ', low_rank)
 
-        # low_rank = tally[search_symbol][lower_limit]
 
         if upper_limit % period != 0:
             high_rank = find_rank(bwt, upper_limit, search_symbol, period, tally)
-            # print('high' , high_rank)
         else:
             high_rank = tally[search_symbol][upper_limit // period]
-            # print('Nasao cp high', high_rank)
 
-        # high_rank = tally[search_symbol][upper_limit]
 
         diff = high_rank - low_rank  # The number of appearance for current symbol
         if diff == 0:
@@ -291,12 +263,8 @@ def fast_count(L_rank, L_tot, F, bwt, pattern, tally, period):
         lower_limit = F[search_symbol][0] + low_rank - 1
         upper_limit = F[search_symbol][0] + low_rank + diff - 1
 
-        # print('Novi limiti su ', lower_limit, upper_limit)
 
     return lower_limit + 1, upper_limit
-
-
-# In[5]:
 
 
 def locate(L_rank, L_tot, F, bwt, f_range, suffix_array, period):
@@ -319,42 +287,29 @@ def locate(L_rank, L_tot, F, bwt, f_range, suffix_array, period):
     # Suffix array is optimized with a period
     for i in range(f_range[0], f_range[1] + 1):
         if i % period == 0:
-            # print('Postoji ', i)
             indices.append(suffix_array[i // period])
         else:
-            # print('Ne postoji ', i)
             row, count = i, 0
             while row % period != 0:
                 count += 1
                 s = bwt[row]
-                # print(s)
-                # print(F[s][0], L_rank[row])
                 row = F[s][0] + L_rank[row]
-            # print( row//period, row, period)
-            # print('Postoji sad row=', row, 'rank=', suffix_array[row//period], ' count=', count)
             indices.append((suffix_array[row // period] + count) % len_seq)
     return indices
-
 
 def find_rank(bwt, row, symbol, period, cp):
     n_sym_hidden = 0
     row_start = row
 
     while (row % period) != 0:
-        # print('Row ', row)
 
         if bwt[row] == symbol:
-            # print('Nasao', bwt[row])
             n_sym_hidden += 1
 
         row -= 1
 
     cp_pos = cp[symbol][row // period] + n_sym_hidden
     return cp_pos
-
-
-# In[6]:
-
 
 def read_file(fpath):
     """ Givem a .txt file return a list of integers """
@@ -370,7 +325,6 @@ def read_file(fpath):
 
     return data
 
-
 def read_seq(fpath):
     sys.setrecursionlimit(10 ** 7)  # max depth of recursion
     threading.stack_size(2 ** 27)  # new thread will get stack of such size
@@ -378,32 +332,11 @@ def read_seq(fpath):
     ca_file = open(fpath)
     ca_sequence = ca_file.read()
     ca_sequence = ca_sequence + '$'
-    # ca_sequence = ca_sequence.replace("\n",'')
-    # ca_sequence = ca_sequence.replace("N",'')
-
-    # print(ca_sequence)
-
-    '''
-    ca_sequence_new = ""
-    for item in ca_sequence.split("\n"):
-        count+=1
-        if "ref" in item:
-            print (item.strip())
-        else:
-            ca_sequence_new = ca_sequence_new + item
-
-    ca_sequence_new = ca_sequence_new.replace("\n",'')
-    '''
-
     ca_sequence = re.sub(">.*\n?", "", ca_sequence)
     ca_sequence = ca_sequence.replace("\n", '')
     ca_sequence = ca_sequence.replace("N", '')
 
     return ca_sequence
-
-
-# In[30]:
-
 
 def convert_size(size_bytes):
     if size_bytes == 0:
@@ -413,10 +346,6 @@ def convert_size(size_bytes):
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
     return "%s %s" % (s, size_name[i])
-
-
-# In[31]:
-
 
 def find_indices(data, seq, pattern, sa_factor=1, tally_factor=1):
     bw = BWT()
@@ -443,7 +372,6 @@ def find_indices(data, seq, pattern, sa_factor=1, tally_factor=1):
 
     # Print time
     print('Processing time needed: ', (end_time - start_time)*1000, '(in miliseconds)')
-   # print(loc)
     count_bytes_tally = 0
     for elem in cp:
         count_bytes_tally+=sys.getsizeof(cp[elem])
@@ -452,271 +380,300 @@ def find_indices(data, seq, pattern, sa_factor=1, tally_factor=1):
     print('Tally matrix: ', convert_size(count_bytes_tally))
     print('Suffix array: ', convert_size(sys.getsizeof(offsets)))
 
+def testBWTandFM():
+    test_obj = BWT()
+    test_sample_keyword = ['abaaba$', 'mississippi$']
+    test_sample_rotation = [
+        ['abaaba$',
+         'baaba$a',
+         'aaba$ab',
+         'aba$aba',
+         'ba$abaa',
+         'a$abaab',
+         '$abaaba'],
+        ['mississippi$'
+         'ississippi$m',
+         'ssissippi$mi',
+         'sissippi$mis',
+         'issippi$miss',
+         'ssippi$missi',
+         'sippi$missis',
+         'ippi$mississ',
+         'ppi$mississi',
+         'pi$mississip',
+         'i$mississipp',
+         '$mississippi']
+    ]
 
-# In[32]:
+    test_sample_sorted = [
+        ['$abaaba',
+         'a$abaab',
+         'aaba$ab',
+         'aba$aba',
+         'abaaba$',
+         'ba$abaa',
+         'baaba$a', ],
+        ['$mississippi',
+         'i$mississipp',
+         'ippi$mississ',
+         'issippi$miss',
+         'ississippi$m',
+         'mississippi$',
+         'pi$mississip',
+         'ppi$mississi',
+         'sippi$missis',
+         'sissippi$mis',
+         'ssippi$missi',
+         'ssissippi$mi']
+    ]
+    test_sample_first_column = [
+        '$aaaabb',
+        '$iiiimppssss'
+    ]
+    test_sample_last_column = [
+        'abba$aa',
+        'ipssm$pissii'
+    ]
+    test_sample_B_ranking = [
+        [[1, 1, 2, 3, 2, 4, 1], {'a': 4, 'b': 2, '$': 1}],
+        [[1, 1, 1, 2, 2, 3, 4, 3, 1, 2, 4, 1], {'m': 1, 'i': 4, 's': 4, 'p': 2, '$': 1}]
+    ]
 
+    test_sample_suffix_array = [
+        [6, 5, 2, 3, 0, 4, 1],
+        [11, 10, 7, 4, 1, 0, 9, 8, 6, 3, 5, 2]
+    ]
 
-test_obj = BWT()
-test_sample_keyword = ['abaaba$', 'mississippi$']
-test_sample_rotation = [
-    ['abaaba$',
-     'baaba$a',
-     'aaba$ab',
-     'aba$aba',
-     'ba$abaa',
-     'a$abaab',
-     '$abaaba'],
-    ['mississippi$'
-     'ississippi$m',
-     'ssissippi$mi',
-     'sissippi$mis',
-     'issippi$miss',
-     'ssippi$missi',
-     'sippi$missis',
-     'ippi$mississ',
-     'ppi$mississi',
-     'pi$mississip',
-     'i$mississipp',
-     '$mississippi']
+    test_sample_tally_matrix_1 = [
+        {'a': [1, 1, 1, 2, 2, 3, 4], 'b': [0, 1, 2, 2, 2, 2, 2]},
+        {'i': [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4], 'p': [0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
+         's': [0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 4], 'm': [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]}
+    ]
+
+    test_sample_tally_matrix_2 = [
+        {'a': [1, 1, 2, 4], 'b': [0, 2, 2, 2]},
+        {'i': [1, 1, 1, 1, 2, 3], 'p': [0, 1, 1, 2, 2, 2], 's': [0, 1, 2, 2, 3, 4], 'm': [0, 0, 1, 1, 1, 1]}
+    ]
+
+    test_sample_tally_matrix_4 = [
+        {'a': [1, 2], 'b': [0, 2]},
+        {'i': [1, 1, 2], 'p': [0, 1, 2], 's': [0, 2, 3], 'm': [0, 1, 1]}
+    ]
+
+    test_sample_pattern = [
+        'aba',
+        'si'
+    ]
+    test_sample_pattern_lookup = [
+        (3, 4),
+        (8, 9)
+    ]
+    testFailed = False
+
+    # testing function rotation:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (test_obj.rotation(test_sample_keyword[i]) != test_sample_rotation[i]):
+            testFailed = True
+
+    if (testFailed == False):
+        print('Rotation failed')
+    else:
+        print('Rotation passed')
+
+    # testing function sorting:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (test_obj.sorting(test_sample_keyword[i]) != test_sample_rotation[i]):
+            testFailed = True
+
+    if (testFailed == False):
+        print('Sorting failed')
+    else:
+        print('Sorting passed')
+
+    # testing function first column extraction:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (test_obj.first_column(test_obj.B_rank(test_sample_keyword[i])[1]) != test_sample_first_column[i]):
+            testFailed = True
+
+    if (testFailed == False):
+        print('First column extraction failed')
+    else:
+        print('First column extraction passed')
+
+    # testing function last column extraction:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (test_obj.last_column(test_obj.B_rank(test_sample_keyword[i])[1]) != test_sample_last_column[i]):
+            testFailed = True
+
+    if (testFailed == False):
+        print('Last column extraction failed')
+    else:
+        print('Last column extraction passed')
+
+    # testing function B ranking:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (test_obj.B_rank(test_sample_keyword[i]) != test_sample_B_ranking[i]):
+            testFailed = True
+
+    if (testFailed == False):
+        print('B ranking test failed')
+    else:
+        print('B ranking test passed')
+
+    # testing function LF mapping:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (test_obj.LF_mapping(test_sample_last_column[i]) != test_sample_keyword[i]):
+            testFailed = True
+    if (testFailed == False):
+        print('LF mapping test failed')
+    else:
+        print('LF mapping test passed')
+
+    # testing function suffix array:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (list(suffix_array(test_sample_keyword[i])) != test_sample_suffix_array[i]):
+            testFailed = True
+    if (testFailed == False):
+        print('SA test failed')
+    else:
+        print('SA test passed')
+
+    # testing tally matrix function output with ranking 1:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (tally_matrix(test_sample_last_column[i])[0] != test_sample_tally_matrix_1[i]):
+            testFailed = True
+    if (testFailed == False):
+        print('tally matrix function with ranking 1 test failed')
+    else:
+        print('tally matrix function with ranking 1 test passed')
+
+    # testing tally matrix function output with ranking 2:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (tally_matrix(test_sample_last_column[i])[0] != test_sample_tally_matrix_2[i]):
+            testFailed = True
+    if (testFailed == False):
+        print('tally matrix function with ranking 2 test failed')
+    else:
+        print('tally matrix function with ranking 2 test passed')
+
+    # testing tally matrix function output with ranking 4:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (tally_matrix(test_sample_last_column[i])[0] != test_sample_tally_matrix_4[i]):
+            testFailed = True
+    if (testFailed == False):
+        print('Tally matrix function with ranking 4 test failed')
+    else:
+        print('Tally matrix function with ranking 4 test passed')
+
+    # testing basic pattern lookup:
+    #
+    for i in range(len(test_sample_keyword)):
+        if (count(test_obj, test_sample_last_column[i], test_sample_pattern[i]) != test_sample_pattern_lookup[i]):
+            testFailed = True
+    if (testFailed == False):
+        print('Pattern lookup test failed')
+    else:
+        print('Pattern lookup test passed')
+
+    coffea_arabica_path = 'data/13443_ref_Cara_1.0_chr1c.fa'
+    mus_pahari_path = 'data/10093_ref_PAHARI_EIJ_v1.1_chrX.fa'
+    alligator_path = 'data/ami_ref_ASM28112v4_chrMT.fa'
+
+    coffea_arabica_patterns = ['ATGCATG', 'TCTCTCTA','TTCACTACTCTCA']
+    mus_pahari_patterns = ['ATGATG', 'CTCTCTA', 'TCACTACTCTCA']
+    alligator_patterns = ['AGTCA', 'AACTCA', 'GTGCTTAG']
+
+    sa_factors = [1, 4, 16, 64, 254]
+    tally_factors = [1, 8, 32, 128, 512]
+
+    # coffea arabica time consumption
+    #
+
+    data = read_file("data/sorted_ca.txt")
+    seq = read_seq(coffea_arabica_path)
+
+    for pattern in coffea_arabica_patterns:
+        for sa_factor in sa_factors:
+            for tally_factor in tally_factors:
+                print('SA factor: ', sa_factor,
+                      ' Tally factor: ', tally_factor,
+                      ' Pattern:', pattern)
+                find_indices(data, seq, pattern, sa_factor, tally_factor)
+
+    # mus pahari time consumption
+    #
+    data = read_file("data/sorted_mp.txt")
+    seq = read_seq(mus_pahari_path)
+
+    for pattern in mus_pahari_patterns:
+        for sa_factor in sa_factors:
+            for tally_factor in tally_factors:
+                print('SA factor: ', sa_factor,
+                      ' Tally factor: ', tally_factor,
+                      ' Pattern:', pattern)
+                find_indices(data, seq, pattern, sa_factor, tally_factor)
+
+    # alligator time consumption
+    #
+
+    data = read_file("data/sorted_al.txt")
+    seq = read_seq(alligator_path)
+
+    for pattern in alligator_patterns:
+        for sa_factor in sa_factors:
+            for tally_factor in tally_factors:
+                print('SA factor: ', sa_factor,
+                      ' Tally factor: ', tally_factor,
+                      ' Pattern:', pattern)
+                find_indices(data, seq, pattern, sa_factor, tally_factor)
+
+# currently available indexes
+# to build upon this, one should run rotation_with_indices and write indexes to separate rows in .txt file
+# After that, add new row to this matrix
+# Program will fail gracefully if no sorted element is found
+#
+available_sequences = [
+    ["13443_ref_Cara_1.0_chr1c.fa", "sorted_ca.txt"],
+    ["10093_ref_PAHARI_EIJ_v1.1_chrX.fa", "sorted_mp.txt"],
+    ["ami_ref_ASM28112v4_chrMT.fa", "sorted_al.txt"]
 ]
 
-test_sample_sorted = [
-    ['$abaaba',
-     'a$abaab',
-     'aaba$ab',
-     'aba$aba',
-     'abaaba$',
-     'ba$abaa',
-     'baaba$a', ],
-    ['$mississippi',
-     'i$mississipp',
-     'ippi$mississ',
-     'issippi$miss',
-     'ississippi$m',
-     'mississippi$',
-     'pi$mississip',
-     'ppi$mississi',
-     'sippi$missis',
-     'sissippi$mis',
-     'ssippi$missi',
-     'ssissippi$mi']
-]
-test_sample_first_column = [
-    '$aaaabb',
-    '$iiiimppssss'
-]
-test_sample_last_column = [
-    'abba$aa',
-    'ipssm$pissii'
-]
-test_sample_B_ranking = [
-    [[1, 1, 2, 3, 2, 4, 1], {'a': 4, 'b': 2, '$': 1}],
-    [[1, 1, 1, 2, 2, 3, 4, 3, 1, 2, 4, 1], {'m': 1, 'i': 4, 's': 4, 'p': 2, '$': 1}]
-]
 
-test_sample_suffix_array = [
-    [6, 5, 2, 3, 0, 4, 1],
-    [11, 10, 7, 4, 1, 0, 9, 8, 6, 3, 5, 2]
-]
+if __name__ == "__main__":
+    file = sys.argv[1]
+    pattern = sys.argv[2]
+    sa_factor = int(sys.argv[3])
+    tally_factor = int(sys.argv[4])
+    indexes = ""
 
-test_sample_tally_matrix_1 = [
-    {'a': [1, 1, 1, 2, 2, 3, 4], 'b': [0, 1, 2, 2, 2, 2, 2]},
-    {'i': [1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3, 4], 'p': [0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
-     's': [0, 0, 1, 2, 2, 2, 2, 2, 3, 4, 4, 4], 'm': [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1]}
-]
+    sa_factors = [1, 4, 16, 64, 254]
+    tally_factors = [1, 8, 32, 128, 512]
 
-test_sample_tally_matrix_2 = [
-    {'a': [1, 1, 2, 4], 'b': [0, 2, 2, 2]},
-    {'i': [1, 1, 1, 1, 2, 3], 'p': [0, 1, 1, 2, 2, 2], 's': [0, 1, 2, 2, 3, 4], 'm': [0, 0, 1, 1, 1, 1]}
-]
+    if sa_factor not in sa_factors:
+        sys.exit("Unappropriate SA offset")
 
-test_sample_tally_matrix_4 = [
-    {'a': [1, 2], 'b': [0, 2]},
-    {'i': [1, 1, 2], 'p': [0, 1, 2], 's': [0, 2, 3], 'm': [0, 1, 1]}
-]
+    if tally_factor not in tally_factors:
+        sys.exit("Unappropriate tally matrix offes")
 
-test_sample_pattern = [
-    'aba',
-    'si'
-]
-test_sample_pattern_lookup = [
-    (3, 4),
-    (8, 9)
-]
-testFailed = False
+    for elem in available_sequences:
+        if (elem[0] == file):
+            indexes = elem[1]
+            break
 
-# testing function rotation:
-#
-for i in range(len(test_sample_keyword)):
-    if (test_obj.rotation(test_sample_keyword[i]) != test_sample_rotation[i]):
-        testFailed = True
+    if (indexes == ""):
+        sys.exit("Indexes for file not found!")
 
-if (testFailed == False):
-    print('Rotation failed')
-else:
-    print('Rotation passed')
+    data = read_file("data/" + indexes)
+    seq = read_seq("data/" + file)
 
-# testing function sorting:
-#
-for i in range(len(test_sample_keyword)):
-    if (test_obj.sorting(test_sample_keyword[i]) != test_sample_rotation[i]):
-        testFailed = True
-
-if (testFailed == False):
-    print('Sorting failed')
-else:
-    print('Sorting passed')
-
-# testing function first column extraction:
-#
-for i in range(len(test_sample_keyword)):
-    if (test_obj.first_column(test_obj.B_rank(test_sample_keyword[i])[1]) != test_sample_first_column[i]):
-        testFailed = True
-
-if (testFailed == False):
-    print('First column extraction failed')
-else:
-    print('First column extraction passed')
-
-# testing function last column extraction:
-#
-for i in range(len(test_sample_keyword)):
-    if (test_obj.last_column(test_obj.B_rank(test_sample_keyword[i])[1]) != test_sample_last_column[i]):
-        testFailed = True
-
-if (testFailed == False):
-    print('Last column extraction failed')
-else:
-    print('Last column extraction passed')
-
-# testing function B ranking:
-#
-for i in range(len(test_sample_keyword)):
-    if (test_obj.B_rank(test_sample_keyword[i]) != test_sample_B_ranking[i]):
-        testFailed = True
-
-if (testFailed == False):
-    print('B ranking test failed')
-else:
-    print('B ranking test passed')
-
-# testing function LF mapping:
-#
-for i in range(len(test_sample_keyword)):
-    if (test_obj.LF_mapping(test_sample_last_column[i]) != test_sample_keyword[i]):
-        testFailed = True
-if (testFailed == False):
-    print('LF mapping test failed')
-else:
-    print('LF mapping test passed')
-
-# testing function suffix array:
-#
-for i in range(len(test_sample_keyword)):
-    if (list(suffix_array(test_sample_keyword[i])) != test_sample_suffix_array[i]):
-        testFailed = True
-if (testFailed == False):
-    print('SA test failed')
-else:
-    print('SA test passed')
-
-# testing tally matrix function output with ranking 1:
-#
-for i in range(len(test_sample_keyword)):
-    if (tally_matrix(test_sample_last_column[i])[0] != test_sample_tally_matrix_1[i]):
-        testFailed = True
-if (testFailed == False):
-    print('tally matrix function with ranking 1 test failed')
-else:
-    print('tally matrix function with ranking 1 test passed')
-
-# testing tally matrix function output with ranking 2:
-#
-for i in range(len(test_sample_keyword)):
-    if (tally_matrix(test_sample_last_column[i])[0] != test_sample_tally_matrix_2[i]):
-        testFailed = True
-if (testFailed == False):
-    print('tally matrix function with ranking 2 test failed')
-else:
-    print('tally matrix function with ranking 2 test passed')
-
-# testing tally matrix function output with ranking 4:
-#
-for i in range(len(test_sample_keyword)):
-    if (tally_matrix(test_sample_last_column[i])[0] != test_sample_tally_matrix_4[i]):
-        testFailed = True
-if (testFailed == False):
-    print('Tally matrix function with ranking 4 test failed')
-else:
-    print('Tally matrix function with ranking 4 test passed')
-
-# testing basic pattern lookup:
-#
-for i in range(len(test_sample_keyword)):
-    if (count(test_obj, test_sample_last_column[i], test_sample_pattern[i]) != test_sample_pattern_lookup[i]):
-        testFailed = True
-if (testFailed == False):
-    print('Pattern lookup test failed')
-else:
-    print('Pattern lookup test passed')
-
-# In[ ]:
-
-
-coffea_arabica_path = 'data/13443_ref_Cara_1.0_chr1c.fa'
-mus_pahari_path = 'data/10093_ref_PAHARI_EIJ_v1.1_chrX.fa'
-alligator_path = 'data/ami_ref_ASM28112v4_chrMT.fa'
-
-coffea_arabica_patterns = ['ATGCATG', 'TCTCTCTA','TTCACTACTCTCA']
-mus_pahari_patterns = ['ATGATG', 'CTCTCTA', 'TCACTACTCTCA']
-alligator_patterns = ['AGTCA', 'AACTCA', 'GTGCTTAG']
-
-sa_factors = [1, 4, 16, 64, 254]
-tally_factors = [1 ]#8, 32, 128, 512]
-
-# coffea arabica time consumption
-#
-
-data = read_file("data/sorted_ca.txt")
-seq = read_seq(coffea_arabica_path)
-
-for pattern in coffea_arabica_patterns:
-    for sa_factor in sa_factors:
-        for tally_factor in tally_factors:
-            print('SA factor: ', sa_factor,
-                  ' Tally factor: ', tally_factor,
-                  ' Pattern:', pattern)
-            find_indices(data, seq, pattern, sa_factor, tally_factor)
-
-# mus pahari time consumption
-#
-data = read_file("data/sorted_mp.txt")
-seq = read_seq(mus_pahari_path)
-
-for pattern in mus_pahari_patterns:
-    for sa_factor in sa_factors:
-        for tally_factor in tally_factors:
-            print('SA factor: ', sa_factor,
-                  ' Tally factor: ', tally_factor,
-                  ' Pattern:', pattern)
-            find_indices(data, seq, pattern, sa_factor, tally_factor)
-
-# alligator time consumption
-#
-
-data = read_file("data/sorted_al.txt")
-seq = read_seq(alligator_path)
-
-for pattern in alligator_patterns:
-    for sa_factor in sa_factors:
-        for tally_factor in tally_factors:
-            print('SA factor: ', sa_factor,
-                  ' Tally factor: ', tally_factor,
-                  ' Pattern:', pattern)
-            find_indices(data, seq, pattern, sa_factor, tally_factor)
-
-# In[ ]:
-
-
-
-
+    find_indices(data, seq, pattern, sa_factor, tally_factor)
